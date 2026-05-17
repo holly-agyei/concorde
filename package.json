@@ -1,0 +1,19 @@
+{
+  "name": "concorde-agentphone-api-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "api:smoke": "node scripts/agentphone-smoke.mjs",
+    "api:web-call:dry-run": "node scripts/create-web-call.mjs --dry-run",
+    "api:call:dry-run": "node scripts/create-outbound-call.mjs --dry-run",
+    "mock:webhook": "node scripts/mock-webhook.mjs",
+    "mock:voice": "node scripts/send-mock-webhook.mjs voice",
+    "mock:sms": "node scripts/send-mock-webhook.mjs sms",
+    "mock:call-ended": "node scripts/send-mock-webhook.mjs call-ended"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
