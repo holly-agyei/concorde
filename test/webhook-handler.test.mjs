@@ -34,6 +34,88 @@ test("sms webhook acknowledges without voice text", () => {
   assert.deepEqual(body, { status: "ok" });
 });
 
+test("sms webhook can send an AgentPhone reply when explicitly enabled", async () => {
+  const requests = [];
+  const smsReplyClient = {
+    request: async (path, options) => {
+      requests.push({ path, options });
+      return { id: "msg_reply" };
+    }
+  };
+
+  const response = await handleAgentPhoneWebhook(sampleSmsPayload, {
+    smsAutoReply: true,
+    smsReplyClient
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { status: "ok", smsReply: "sent" });
+  assert.deepEqual(requests, [
+    {
+      path: "/messages",
+      options: {
+        method: "POST",
+        body: {
+          agent_id: sampleSmsPayload.agentId,
+          to_number: sampleSmsPayload.data.from,
+          body: "Thanks for texting Concorde. We received: Test message",
+          number_id: sampleSmsPayload.data.numberId
+        }
+      }
+    }
+  ]);
+});
+
+test("sms webhook does not auto-reply to outbound messages", () => {
+  const outboundPayload = {
+    ...sampleSmsPayload,
+    data: {
+      ...sampleSmsPayload.data,
+      direction: "outbound"
+    }
+  };
+  const smsReplyClient = {
+    request: async () => {
+      throw new Error("should not send");
+    }
+  };
+
+  const response = handleAgentPhoneWebhook(outboundPayload, {
+    smsAutoReply: true,
+    smsReplyClient
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { status: "ok" });
+});
+
+test("imessage webhook can use the same auto-reply path", async () => {
+  const requests = [];
+  const imessagePayload = {
+    ...sampleSmsPayload,
+    channel: "imessage"
+  };
+  const smsReplyClient = {
+    request: async (path, options) => {
+      requests.push({ path, options });
+      return { id: "msg_reply" };
+    }
+  };
+
+  const response = await handleAgentPhoneWebhook(imessagePayload, {
+    smsAutoReply: true,
+    smsReplyClient
+  });
+  const body = JSON.parse(response.body);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { status: "ok", smsReply: "sent" });
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].path, "/messages");
+});
+
 test("call-ended webhook acknowledges completed calls", () => {
   const response = handleAgentPhoneWebhook(sampleCallEndedPayload);
   const body = JSON.parse(response.body);
