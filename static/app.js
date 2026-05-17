@@ -44,7 +44,13 @@ function eventMessage(event) {
     case "agent_transcript":
       return `Caller: ${data.text}`;
     case "gemini_plan":
-      return `Gemini chose ${data.tool_count || 0} tool action(s)`;
+      return `Gemini plan: ${data.tool_count || 0} tool(s) — ${data.reason || ""}`;
+    case "gemini_unavailable":
+      return `Gemini unavailable: ${data.error}`;
+    case "gemini_plan_failed":
+      return `Gemini plan failed: ${data.error}`;
+    case "gemini_final_failed":
+      return `Gemini final failed: ${data.error}`;
     case "moss_lookup_started":
       return `Moss lookup: ${data.query}`;
     case "moss_lookup_finished":

@@ -18,6 +18,11 @@ def index():
     return send_from_directory("static", "index.html")
 
 
+@app.get("/user")
+def user_page():
+    return send_from_directory("static", "user.html")
+
+
 @app.get("/events")
 def events():
     subscriber = subscribe()
@@ -125,7 +130,9 @@ def local_utterance():
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
     caller = payload.get("caller_phone", "+13185160977")
-    final = respond("local-demo", caller, text)
+    session_id = payload.get("session_id") or "local-demo"
+    persona = payload.get("persona")
+    final = respond(session_id, caller, text, persona=persona)
     return jsonify({"text": final, "state": current_state()})
 
 

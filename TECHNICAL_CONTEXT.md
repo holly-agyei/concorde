@@ -283,7 +283,7 @@ Rules for the coding agent:
 
 ## Pre-Hackathon Setup (do this BEFORE the clock starts)
 
-1. Install Python 3.11+, Node (in case), ngrok, Flask, `google-generativeai`, `python-dotenv`, `requests`.
+1. Install Python 3.11+, Node (in case), ngrok, Flask, `google-genai`, `python-dotenv`, `requests`.
 2. Get API keys for: Gemini, AgentPhone, Moss, Supermemory.
 3. Confirm ngrok is authenticated.
 4. Create a "hello world" Flask app, expose it via ngrok, confirm AgentPhone can hit it with a test call.

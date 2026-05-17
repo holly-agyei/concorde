@@ -38,6 +38,13 @@
         "reason": "Similar cereal category and available now."
       }
     ],
-    "pending_substitution": null
+    "pending_substitution": {
+      "from": "Honey Crunch Cereal",
+      "to": "Cinnamon Oat Squares",
+      "sku": "cereal_cinnamon_oat",
+      "price": 4.98,
+      "reason": "In stock and frequently purchased by this customer.",
+      "status": "pending_confirmation"
+    }
   }
 }
