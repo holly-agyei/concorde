@@ -1,0 +1,21 @@
+{
+  "driver_001": {
+    "id": "driver_001",
+    "name": "Marcus",
+    "phone": "+14155550199",
+    "current_location": {
+      "lat": 37.6213,
+      "lng": -122.379,
+      "label": "SFO approach"
+    },
+    "destination": {
+      "lat": 37.619,
+      "lng": -122.383,
+      "label": "Station B",
+      "door": "Confirm with rider"
+    },
+    "status": "en_route",
+    "eta_minutes": 10,
+    "distance_miles": 2.0
+  }
+}

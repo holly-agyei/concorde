@@ -1,0 +1,16 @@
+{
+  "+13185160977": {
+    "phone": "+13185160977",
+    "name": "Alex",
+    "active_ride_id": "ride_001",
+    "active_walmart_order_id": "order_1042",
+    "preferences": {
+      "home_airport": "SFO",
+      "preferred_cereal": "Cinnamon Oat Squares"
+    },
+    "history": [
+      "Previously confused SFO Terminal C and Terminal D.",
+      "Often chooses Cinnamon Oat Squares when Honey Crunch is unavailable."
+    ]
+  }
+}

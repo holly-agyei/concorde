@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#075e54" />
+  <title>Concorde — User</title>
+  <link rel="stylesheet" href="/static/user.css" />
+</head>
+<body>
+  <main class="device">
+    <div class="phone" id="phone">
+
+      <!-- ============= CHATS LIST ============= -->
+      <section class="screen screen--chats" data-screen="chats">
+        <header class="topbar">
+          <div class="topbar__title">WhatsApp</div>
+          <div class="topbar__actions">
+            <button class="iconbtn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            </button>
+            <button class="iconbtn" title="Search" aria-label="Search">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            </button>
+            <button class="iconbtn" title="Menu" aria-label="Menu">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <nav class="tabs">
+          <button class="tabs__tab tabs__tab--active">Chats</button>
+          <button class="tabs__tab" data-goto="calls">Calls</button>
+          <button class="tabs__tab">Status</button>
+        </nav>
+
+        <ul class="chat-list" id="chatList"></ul>
+
+        <button class="fab" title="New chat" aria-label="New chat">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5A8.4 8.4 0 1 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"/><path d="M8 12h8M12 8v8"/></svg>
+        </button>
+      </section>
+
+      <!-- ============= CHAT THREAD ============= -->
+      <section class="screen screen--thread" data-screen="thread" hidden>
+        <header class="topbar topbar--thread">
+          <button class="iconbtn" data-back title="Back" aria-label="Back">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <div class="avatar avatar--sm" id="threadAvatar">·</div>
+          <div class="thread-head">
+            <div class="thread-head__name" id="threadName">—</div>
+            <div class="thread-head__status" id="threadStatus">online</div>
+          </div>
+          <div class="topbar__actions">
+            <button class="iconbtn" id="startVideo" title="Video" aria-label="Video">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h12v10H3z"/><path d="M15 10l6-3v10l-6-3"/></svg>
+            </button>
+            <button class="iconbtn" id="startCall" title="Call" aria-label="Call">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2.3z"/></svg>
+            </button>
+            <button class="iconbtn" title="Menu" aria-label="Menu">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="thread" id="thread">
+          <div class="day-chip">Today</div>
+          <div class="bubble bubble--sys" id="sysBubble">Messages are end-to-end encrypted. No one outside this chat, not even Concorde, can read them.</div>
+        </div>
+
+        <form class="composer" id="composer" autocomplete="off">
+          <div class="composer__input">
+            <button type="button" class="iconbtn iconbtn--ghost" title="Emoji" aria-label="Emoji">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/></svg>
+            </button>
+            <input type="text" id="composerText" placeholder="Message" />
+            <button type="button" class="iconbtn iconbtn--ghost" title="Attach" aria-label="Attach">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.5 12.7 20.8a5.5 5.5 0 1 1-7.8-7.8L13.4 4.6a3.7 3.7 0 1 1 5.2 5.2L10.1 18.3a1.8 1.8 0 1 1-2.6-2.6l7.5-7.5"/></svg>
+            </button>
+            <button type="button" class="iconbtn iconbtn--ghost" title="Camera" aria-label="Camera">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            </button>
+          </div>
+          <button type="submit" class="send" id="sendBtn" aria-label="Send">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 11.5 21 3l-8.5 18-2.2-7.3z"/></svg>
+          </button>
+        </form>
+      </section>
+
+      <!-- ============= CALLS LIST ============= -->
+      <section class="screen screen--calls" data-screen="calls" hidden>
+        <header class="topbar">
+          <div class="topbar__title">Calls</div>
+          <div class="topbar__actions">
+            <button class="iconbtn" title="Search" aria-label="Search">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            </button>
+            <button class="iconbtn" title="Menu" aria-label="Menu">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <nav class="tabs">
+          <button class="tabs__tab" data-goto="chats">Chats</button>
+          <button class="tabs__tab tabs__tab--active">Calls</button>
+          <button class="tabs__tab">Status</button>
+        </nav>
+
+        <div class="section-label">Recent</div>
+        <ul class="chat-list" id="callsList"></ul>
+      </section>
+
+      <!-- ============= ACTIVE CALL OVERLAY ============= -->
+      <section class="screen screen--call" data-screen="call" hidden>
+        <div class="call">
+          <div class="call__top">
+            <div class="call__label" id="callName">—</div>
+            <div class="call__sub" id="callStatus">Calling…</div>
+            <div class="call__timer" id="callTimer" hidden>00:00</div>
+          </div>
+
+          <div class="call__avatar">
+            <div class="avatar avatar--xl" id="callAvatar">·</div>
+          </div>
+
+          <form class="call__say" id="callSay" autocomplete="off">
+            <input type="text" id="callSayText" placeholder="Say something to the agent…" />
+            <button type="submit" class="iconbtn iconbtn--ghost" aria-label="Speak">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v4"/></svg>
+            </button>
+          </form>
+
+          <div class="call__actions">
+            <button class="callbtn" id="muteBtn" title="Mute" aria-label="Mute">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v4"/></svg>
+              <span>Mute</span>
+            </button>
+            <button class="callbtn" id="spkBtn" title="Speaker" aria-label="Speaker">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
+              <span>Speaker</span>
+            </button>
+            <button class="callbtn callbtn--end" id="endBtn" title="End" aria-label="End">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M3 11c4-4 14-4 18 0l-2 2-3-1v-2a14 14 0 0 0-8 0v2l-3 1z"/></svg>
+              <span>End</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="/static/user.js"></script>
+</body>
+</html>

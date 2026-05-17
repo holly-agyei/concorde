@@ -1,0 +1,50 @@
+{
+  "order_1042": {
+    "id": "order_1042",
+    "customer_phone": "+13185160977",
+    "customer_name": "Alex",
+    "store": "Walmart Supercenter - San Leandro",
+    "status": "substitution_confirmed",
+    "cutoff_status": "editable",
+    "items": [
+      {
+        "sku": "cereal_honey_crunch",
+        "name": "Honey Crunch Cereal",
+        "quantity": 1,
+        "status": "substituted",
+        "substitution": "Cinnamon Oat Squares"
+      },
+      {
+        "sku": "milk_2_percent",
+        "name": "2% Milk",
+        "quantity": 1,
+        "status": "confirmed",
+        "substitution": null
+      }
+    ],
+    "suggestions": [
+      {
+        "sku": "cereal_cinnamon_oat",
+        "name": "Cinnamon Oat Squares",
+        "price": 4.98,
+        "stock": 12,
+        "reason": "In stock and frequently purchased by this customer."
+      },
+      {
+        "sku": "cereal_berry_granola",
+        "name": "Berry Granola",
+        "price": 5.42,
+        "stock": 5,
+        "reason": "Similar cereal category and available now."
+      }
+    ],
+    "pending_substitution": {
+      "from": "Honey Crunch Cereal",
+      "to": "Cinnamon Oat Squares",
+      "sku": "cereal_cinnamon_oat",
+      "price": 4.98,
+      "reason": "In stock and frequently purchased by this customer.",
+      "status": "pending_confirmation"
+    }
+  }
+}
