@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Concorde Live Agent Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <main id="main" class="shell">
+      <section class="stage" aria-labelledby="stage-title">
+        <div class="stage-header">
+          <div>
+            <p class="eyebrow">Concorde</p>
+            <h1 id="stage-title">Live Phone Agent Control Room</h1>
+          </div>
+          <div class="status-strip" aria-live="polite">
+            <span id="geminiStatus">Gemini</span>
+            <span id="mossStatus">Moss</span>
+            <span id="browserStatus">Browser Use</span>
+          </div>
+        </div>
+
+        <div class="demo-grid">
+          <article class="phone" aria-label="Uber driver app preview">
+            <div class="phone-screen">
+              <div class="map-ui" id="uberMap">
+                <div class="status-bar">
+                  <strong>9:41</strong>
+                  <span aria-hidden="true">▮▮▮ ))) ▭</span>
+                </div>
+                <button class="round-button menu-button" type="button" aria-label="Open driver menu">
+                  <span aria-hidden="true"></span>
+                </button>
+                <div class="eta-pill" aria-live="polite">
+                  <span class="green-dot" aria-hidden="true"></span>
+                  <strong id="etaText">12 min · 4.3 mi</strong>
+                </div>
+                <button class="round-button locate-button" type="button" aria-label="Recenter map">
+                  <span aria-hidden="true">⌖</span>
+                </button>
+                <div class="park-label">Hayward Park</div>
+                <div class="street-label">Bayshore Fwy</div>
+                <svg class="route-svg" viewBox="0 0 360 420" aria-hidden="true">
+                  <path id="routePath" class="route route-c" d="M42 162 C88 174, 126 214, 164 256 S250 342, 286 386"></path>
+                  <circle class="route-start" cx="42" cy="162" r="9"></circle>
+                </svg>
+                <div id="destPin" class="dest-pin terminal-c" aria-hidden="true"></div>
+              </div>
+
+              <section class="bottom-sheet" aria-labelledby="rider-title">
+                <div class="grabber" aria-hidden="true"></div>
+                <div class="rider-row">
+                  <div class="avatar" aria-hidden="true"><span></span></div>
+                  <div class="rider-copy">
+                    <h2 id="rider-title">Alex <span>★ 4.9</span></h2>
+                    <p>UberX · Verified rider</p>
+                  </div>
+                  <button class="icon-action" type="button" aria-label="Message rider">▰</button>
+                  <button class="icon-action dark" type="button" aria-label="Call rider">☎</button>
+                </div>
+
+                <div class="address-card">
+                  <div class="address-row">
+                    <span class="pickup-dot" aria-hidden="true"></span>
+                    <div>
+                      <p>Pickup</p>
+                      <strong>152 Mission St</strong>
+                    </div>
+                  </div>
+                  <div class="address-row">
+                    <span class="drop-square" aria-hidden="true"></span>
+                    <div>
+                      <p>Dropoff</p>
+                      <strong id="dropoffText">SFO Terminal C</strong>
+                      <small id="dropoffSub">San Francisco International Airport · Door 3</small>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="navigate-button" type="button" id="manualReroute">
+                  <span aria-hidden="true">➤</span>
+                  Reroute To Terminal D
+                </button>
+              </section>
+            </div>
+          </article>
+
+          <section class="ops-panel" aria-label="Agent operations">
+            <div class="panel-card call-card">
+              <h2>Phone Agent</h2>
+              <p>Call the AgentPhone number, or test locally with a transcript.</p>
+              <form id="utteranceForm">
+                <label for="utterance">Caller Says</label>
+                <textarea id="utterance" name="utterance" rows="3" autocomplete="off">I'm at Terminal D, not Terminal C.</textarea>
+                <button type="submit">Send To Agent</button>
+              </form>
+              <div class="agent-speech" aria-live="polite">
+                <p>Agent Response</p>
+                <strong id="agentResponse">Waiting for the first call…</strong>
+              </div>
+            </div>
+
+            <div class="panel-card walmart-card">
+              <div class="panel-title-row">
+                <h2>Walmart Order</h2>
+                <span id="walmartMode">mock</span>
+              </div>
+              <p class="order-meta">Order #1042 · Shopper picking items</p>
+              <div class="walmart-item">
+                <span class="item-status unavailable">Unavailable</span>
+                <strong>Honey Crunch Cereal</strong>
+                <small id="substitutionText">No substitution applied</small>
+              </div>
+              <div class="walmart-item suggestion">
+                <span class="item-status available">In Stock</span>
+                <strong>Cinnamon Oat Squares</strong>
+                <small>In stock and frequently purchased</small>
+              </div>
+              <div class="button-row">
+                <button id="proposeSub" type="button">Propose Substitution</button>
+                <button id="applySub" type="button">Apply Confirmed</button>
+              </div>
+            </div>
+
+            <div class="panel-card event-card">
+              <div class="panel-title-row">
+                <h2>Live Event Log</h2>
+                <button id="resetDemo" type="button">Reset</button>
+              </div>
+              <ol id="eventLog" class="event-log" aria-live="polite"></ol>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

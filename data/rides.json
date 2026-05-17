@@ -1,0 +1,22 @@
+{
+  "ride_001": {
+    "id": "ride_001",
+    "customer_phone": "+13185160977",
+    "customer_name": "Alex",
+    "driver_id": "driver_001",
+    "service": "UberX",
+    "pickup": {
+      "lat": 37.7936,
+      "lng": -122.3956,
+      "label": "152 Mission St"
+    },
+    "destination": {
+      "lat": 37.6177,
+      "lng": -122.3864,
+      "label": "SFO Terminal D",
+      "door": "Door 5"
+    },
+    "status": "in_progress",
+    "rating": "4.9"
+  }
+}
