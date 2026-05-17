@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sfo-terminal-c",
+    "text": "SFO Terminal C is a domestic terminal pickup area. In this demo, the customer's original pickup is SFO Terminal C.",
+    "metadata": {
+      "category": "airport",
+      "place": "SFO",
+      "terminal": "C"
+    }
+  },
+  {
+    "id": "sfo-terminal-d",
+    "text": "SFO Terminal D is close to Terminal C. A Terminal C to Terminal D pickup correction is a minor airport reroute.",
+    "metadata": {
+      "category": "airport",
+      "place": "SFO",
+      "terminal": "D"
+    }
+  },
+  {
+    "id": "driver-safety-policy",
+    "text": "Drivers should not answer phone calls while driving. The agent may handle simple destination corrections and notify the driver.",
+    "metadata": {
+      "category": "policy",
+      "topic": "driver_safety"
+    }
+  },
+  {
+    "id": "minor-reroute-policy",
+    "text": "For minor pickup corrections at the same venue, confirm the new destination with the caller, update the driver route, and send a short driver notification.",
+    "metadata": {
+      "category": "policy",
+      "topic": "reroute"
+    }
+  },
+  {
+    "id": "customer-terminal-context",
+    "text": "The demo customer is at SFO and may confuse Terminal C and Terminal D. Prefer concise confirmation before rerouting.",
+    "metadata": {
+      "category": "customer_context",
+      "topic": "airport_pickup"
+    }
+  }
+]
