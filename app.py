@@ -1,5 +1,11 @@
 import json
 import os
+import sys
+
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
 
@@ -21,6 +27,16 @@ def index():
 @app.get("/user")
 def user_page():
     return send_from_directory("static", "user.html")
+
+
+@app.get("/rider")
+def rider_page():
+    return send_from_directory("static", "rider.html")
+
+
+@app.get("/driver")
+def driver_page():
+    return send_from_directory("static", "driver.html")
 
 
 @app.get("/events")
@@ -53,7 +69,7 @@ def api_reset():
 @app.post("/api/demo/uber/reroute")
 def api_uber_reroute():
     payload = request.get_json(silent=True) or {}
-    destination = payload.get("destination", "SFO Terminal D")
+    destination = payload.get("destination", "SFO Terminal 3")
     result = uber.reroute_driver(destination)
     push_event(
         "uber_rerouted",
@@ -123,6 +139,31 @@ def agentphone_webhook():
         return jsonify({"status": "ok", "text": final})
 
     return jsonify({"status": "ok"})
+
+
+@app.post("/api/demo/passenger-event")
+def api_passenger_event():
+    payload = request.get_json(silent=True) or {}
+    kind = payload.get("kind")
+    persona = payload.get("persona")
+    if persona not in {"uber-david", "uber-vivya"}:
+        return jsonify({"ok": False, "reason": "unknown persona"}), 400
+    if kind == "message":
+        push_event("passenger_message", {
+            "persona": persona,
+            "text": payload.get("text", ""),
+            "channel": payload.get("channel", "sms"),
+            "from_name": payload.get("from_name", "Alex"),
+        })
+    elif kind in {"call_start", "call_end"}:
+        push_event("passenger_call", {
+            "persona": persona,
+            "kind": kind,
+            "from_name": payload.get("from_name", "Alex"),
+        })
+    else:
+        return jsonify({"ok": False, "reason": "unknown kind"}), 400
+    return jsonify({"ok": True})
 
 
 @app.post("/api/demo/local-utterance")

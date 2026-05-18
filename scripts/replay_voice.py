@@ -17,7 +17,7 @@ payload = {
         "numberId": "cmpa6fver0869jz00zapzbujw",
         "from": "+13185160977",
         "to": "+18154738613",
-        "transcript": "I'm at Terminal D, not Terminal C.",
+        "transcript": "I'm at Terminal 3, not Terminal 2.",
         "direction": "inbound",
     },
 }

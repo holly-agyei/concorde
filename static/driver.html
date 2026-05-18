@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Uber Driver · Concorde</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/driver.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="top__left">
+      <div class="avatar" id="driverAvatar">D</div>
+      <div>
+        <div class="top__name" id="driverName">David</div>
+        <div class="top__sub" id="driverSub">Toyota Camry · ABC-123</div>
+      </div>
+    </div>
+    <div class="top__right">
+      <div class="online-dot"></div>
+      <span>Online</span>
+    </div>
+  </header>
+
+  <div id="map"></div>
+
+  <div id="rerouteBanner" class="reroute-banner" hidden>
+    <div class="reroute-banner__title">REROUTING</div>
+    <div class="reroute-banner__sub" id="rerouteSub">New destination</div>
+  </div>
+
+  <div class="call-pill" id="callPill" hidden>
+    <span class="call-pill__dot"></span>
+    <span class="call-pill__text"><span id="callPillName">Alex</span> is calling…</span>
+    <button type="button" class="call-pill__btn call-pill__btn--accept" id="acceptBtn">Accept</button>
+    <button type="button" class="call-pill__btn call-pill__btn--decline" id="declineBtn">Dismiss</button>
+  </div>
+
+  <section class="trip-strip">
+    <div class="trip-strip__rider">
+      <div class="rider-avatar" id="riderAvatar">A</div>
+      <div>
+        <div class="trip-strip__name" id="riderName">Alex</div>
+        <div class="trip-strip__service">UberX · ★ <span id="riderRating">4.9</span></div>
+      </div>
+    </div>
+    <div class="trip-strip__route">
+      <div class="trip-strip__row">
+        <span class="dot dot--blue"></span>
+        <span class="trip-strip__label" id="pickupLabel">—</span>
+      </div>
+      <div class="trip-strip__row">
+        <span class="dot dot--green"></span>
+        <span class="trip-strip__label" id="dropLabel">—</span>
+        <small class="trip-strip__door" id="dropDoor"></small>
+      </div>
+    </div>
+    <div class="trip-strip__eta">
+      <div class="trip-strip__eta-num" id="etaNum">12</div>
+      <div class="trip-strip__eta-label">min</div>
+    </div>
+  </section>
+
+  <section class="chat">
+    <div class="chat__body" id="chatBody">
+      <div class="chat-empty">No messages yet — say hi to your rider.</div>
+    </div>
+    <form class="chat__composer" id="chatForm" autocomplete="off">
+      <input id="chatInput" type="text" placeholder="Message your rider…" />
+      <button type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </button>
+    </form>
+  </section>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/uber-map.js"></script>
+  <script src="/static/driver.js"></script>
+</body>
+</html>
