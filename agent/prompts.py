@@ -22,25 +22,5 @@ Rules:
 """
 
 
-PLANNER_PROMPT = """Return JSON only. Decide which tools to call for the caller's latest utterance.
-Tool names:
-- lookup_uber_trip
-- reroute_uber_driver with {"destination_label": "..."}
-- lookup_walmart_order
-- propose_walmart_substitution with {"item_name": "...", "substitute_name": "..."}
-- apply_walmart_substitution
-- run_walmart_browser_task with {"task": "...", "caller_confirmed": true|false}
-- semantic_lookup with {"query": "..."}
-
-Return shape:
-{
-  "tool_calls": [{"name": "...", "args": {}}],
-  "reason": "short internal reason",
-  "direct_response": "only if no tools are needed"
-}
-"""
-
-
-FINAL_PROMPT = """Write the final spoken response for a live phone caller.
-Use the tool results. Be concise, natural, and confident. If a tool failed, say the safe fallback plainly.
-Do not mention JSON or internal tool names."""
+# Scenario-specific planner and final prompts live in agent/brain_uber.py and agent/brain_walmart.py.
+# This file holds only the shared system prompt — the dispatcher in agent/brain.py routes by persona.role.

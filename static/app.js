@@ -24,8 +24,8 @@ const els = {
 };
 
 const routePaths = {
-  c: "M42 162 C88 174, 126 214, 164 256 S250 342, 286 386",
-  d: "M42 162 C92 168, 132 190, 176 214 S232 248, 262 292",
+  t2: "M42 162 C88 174, 126 214, 164 256 S250 342, 286 386",
+  t3: "M42 162 C92 168, 132 190, 176 214 S232 248, 262 292",
 };
 
 function formatTime(ts) {
@@ -108,13 +108,13 @@ function updateUber(data) {
   const ride = data.uber.rides.ride_001;
   const driver = data.uber.drivers[ride.driver_id];
   const dest = driver.destination;
-  const isTerminalD = /terminal d/i.test(dest.label);
+  const isTerminal3 = /terminal\s*3/i.test(dest.label);
   els.dropoffText.textContent = dest.label;
   els.dropoffSub.textContent = `San Francisco International Airport · ${dest.door || "Door TBD"}`;
   els.etaText.textContent = `${driver.eta_minutes} min · ${driver.distance_miles} mi`;
-  els.destPin.classList.toggle("terminal-d", isTerminalD);
-  els.destPin.classList.toggle("terminal-c", !isTerminalD);
-  els.routePath.setAttribute("d", isTerminalD ? routePaths.d : routePaths.c);
+  els.destPin.classList.toggle("terminal-3", isTerminal3);
+  els.destPin.classList.toggle("terminal-2", !isTerminal3);
+  els.routePath.setAttribute("d", isTerminal3 ? routePaths.t3 : routePaths.t2);
 }
 
 function updateWalmart(data) {
@@ -168,7 +168,7 @@ els.utteranceForm.addEventListener("submit", async (event) => {
 });
 
 els.manualReroute.addEventListener("click", async () => {
-  await postJson("/api/demo/uber/reroute", { destination: "SFO Terminal D" });
+  await postJson("/api/demo/uber/reroute", { destination: "SFO Terminal 3" });
   await refreshState();
 });
 
