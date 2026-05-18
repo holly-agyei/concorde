@@ -252,6 +252,15 @@ function clearTyping() {
   threadStatus.textContent = 'online';
 }
 
+function notifyDriver(personaId, kind, extra = {}) {
+  if (personaId !== 'uber-david' && personaId !== 'uber-vivya') return;
+  fetch('/api/demo/passenger-event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ persona: personaId, kind, from_name: 'Alex', ...extra }),
+  }).catch(() => {});
+}
+
 async function sendToAgent(personaId, text) {
   const p = PERSONAS[personaId];
   showTyping();
@@ -287,6 +296,7 @@ composer.addEventListener('submit', (e) => {
   if (!text) return;
   addBubble(activePersonaId, text, 'out');
   composerText.value = '';
+  notifyDriver(activePersonaId, 'message', { text, channel: 'sms' });
   sendToAgent(activePersonaId, text);
 });
 
@@ -298,6 +308,7 @@ callSay.addEventListener('submit', (e) => {
   callSayText.value = '';
   callStatus.textContent = `You: ${text}`;
   addBubble(activePersonaId, text, 'out');
+  notifyDriver(activePersonaId, 'message', { text, channel: 'voice' });
   sendToAgent(activePersonaId, text);
 });
 
@@ -315,6 +326,7 @@ function startCall(personaId) {
   callAvatar.textContent = p.initials;
   callAvatar.style.background = p.color;
   inCall = true;
+  notifyDriver(personaId, 'call_start');
   show('call');
   callStatus.textContent = 'Calling…';
   callTimer.hidden = true;
@@ -335,6 +347,7 @@ function startCall(personaId) {
 }
 
 function endCall() {
+  if (inCall && activePersonaId) notifyDriver(activePersonaId, 'call_end');
   inCall = false;
   if (callTimerHandle) { clearInterval(callTimerHandle); callTimerHandle = null; }
   callStartTs = null;
@@ -376,6 +389,20 @@ function handleEvent({ type, data }) {
       break;
     case 'call_ended':
       if (inCall) endCall();
+      break;
+    case 'passenger_call':
+      if (data.kind === 'call_end' && data.persona === activePersonaId && inCall) {
+        inCall = false;
+        if (callTimerHandle) { clearInterval(callTimerHandle); callTimerHandle = null; }
+        callStartTs = null;
+        show('chats');
+        addToast(activePersonaId, 'Call ended');
+      }
+      break;
+    case 'gemini_unavailable':
+    case 'gemini_plan_failed':
+    case 'gemini_final_failed':
+      if (activePersonaId) addToast(activePersonaId, `Gemini ${type.replace('gemini_', '')}: ${data.reason || data.error || 'check terminal'}`);
       break;
     default: break;
   }

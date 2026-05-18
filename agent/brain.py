@@ -1,9 +1,10 @@
 import json
 import os
 import re
+import traceback
 from collections import defaultdict
 
-from agent.prompts import FINAL_PROMPT, PLANNER_PROMPT, SYSTEM_PROMPT
+from agent.prompts import SYSTEM_PROMPT
 from agent.tools import TOOL_REGISTRY
 from events import push_event
 
@@ -21,19 +22,50 @@ def respond(session_id, caller_phone, utterance, persona=None):
     if not utterance:
         return "I heard silence. Tell me what you need changed, and I’ll help."
 
+    print(f"[Respond] session={session_id} caller={caller_phone} utterance={utterance!r} persona={persona}", flush=True)
     _history[session_id].append({"role": "user", "content": utterance})
     push_event("agent_transcript", {"caller_phone": caller_phone, "text": utterance, "persona": persona})
 
-    plan = _plan_with_gemini(session_id, caller_phone, utterance, persona) or _fallback_plan(utterance)
-    tool_results = _execute_plan(plan, {"caller_phone": caller_phone, "session_id": session_id})
+    scenario = _scenario_for(persona, utterance)
+    print(f"[Respond] scenario={scenario}", flush=True)
 
-    final = (
-        _final_with_gemini(session_id, utterance, tool_results, plan, persona)
-        or _fallback_final(utterance, tool_results, plan, persona)
-    )
+    if scenario == "uber":
+        from agent.brain_uber import respond_uber
+
+        final = respond_uber(session_id, caller_phone, utterance, persona, _deps(session_id))
+    elif scenario == "walmart":
+        from agent.brain_walmart import respond_walmart
+
+        final = respond_walmart(session_id, caller_phone, utterance, persona, _deps(session_id))
+    else:
+        final = _apply_persona_prefix(
+            "I can help with your ride or Walmart order. What do you need changed?",
+            persona,
+        )
+
     _history[session_id].append({"role": "agent", "content": final})
     push_event("agent_response", {"text": final, "persona": persona})
     return final
+
+
+def _scenario_for(persona, utterance):
+    role = persona.get("role") if isinstance(persona, dict) else None
+    if role == "uber_driver":
+        return "uber"
+    if role == "walmart_cs":
+        return "walmart"
+    return _route_by_text(utterance)
+
+
+def _route_by_text(utterance):
+    text = utterance.lower()
+    if re.search(r"\b(walmart|grocery|cereal|substitute|substitution)\b", text):
+        return "walmart"
+    if re.search(r"\b(terminal|uber|ride|driver|pickup|dropoff|reroute|door)\b", text):
+        return "uber"
+    if re.search(r"\bdrop\s*off\b", text):
+        return "uber"
+    return "none"
 
 
 def _persona_block(persona):
@@ -60,218 +92,6 @@ def _persona_block(persona):
     return {"name": name, "role": role, "instruction": voice}
 
 
-def _client():
-    if os.getenv("CONCORDE_OFFLINE_TESTS"):
-        return None
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return None
-    try:
-        from google import genai
-    except Exception as error:
-        print(f"[Gemini] unavailable: {error}")
-        push_event("gemini_unavailable", {"error": str(error)})
-        return None
-    return genai.Client(api_key=api_key)
-
-
-def _gemini_model_name():
-    return os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-
-
-def _plan_with_gemini(session_id, caller_phone, utterance, persona=None):
-    client = _client()
-    if not client:
-        return None
-    context = {
-        "caller_phone": caller_phone,
-        "history": _history[session_id][-6:],
-        "latest_utterance": utterance,
-        "persona": _persona_block(persona),
-    }
-    prompt = f"{SYSTEM_PROMPT}\n\n{PLANNER_PROMPT}\n\nContext:\n{json.dumps(context, indent=2)}"
-    try:
-        response = client.models.generate_content(model=_gemini_model_name(), contents=prompt)
-        text = _extract_text(response)
-        plan = _parse_json(text)
-        if isinstance(plan, dict):
-            print(f"[Gemini] plan: {plan.get('reason')} | tools: {[c.get('name') for c in plan.get('tool_calls', [])]}")
-            push_event("gemini_plan", {"reason": plan.get("reason"), "tool_count": len(plan.get("tool_calls", []))})
-            return plan
-    except Exception as error:
-        print(f"[Gemini] plan failed: {error}")
-        push_event("gemini_plan_failed", {"error": str(error)})
-    return None
-
-
-def _final_with_gemini(session_id, utterance, tool_results, plan, persona=None):
-    client = _client()
-    if not client:
-        return None
-    context = {
-        "history": _history[session_id][-8:],
-        "latest_utterance": utterance,
-        "plan": plan,
-        "tool_results": tool_results,
-        "persona": _persona_block(persona),
-    }
-    prompt = f"{SYSTEM_PROMPT}\n\n{FINAL_PROMPT}\n\nContext:\n{json.dumps(context, indent=2, default=str)}"
-    try:
-        response = client.models.generate_content(model=_gemini_model_name(), contents=prompt)
-        text = _extract_text(response).strip()
-        if text:
-            print(f"[Gemini] final: {text[:200]}")
-            return text[:700]
-    except Exception as error:
-        print(f"[Gemini] final failed: {error}")
-        push_event("gemini_final_failed", {"error": str(error)})
-    return None
-
-
-def _execute_plan(plan, context):
-    results = []
-    calls = plan.get("tool_calls", []) if isinstance(plan, dict) else []
-    for call in calls[:5]:
-        name = call.get("name")
-        args = call.get("args") or {}
-        tool = TOOL_REGISTRY.get(name)
-        if not tool:
-            results.append({"name": name, "ok": False, "error": "unknown_tool"})
-            continue
-        try:
-            result = tool(args, context)
-            results.append({"name": name, "ok": True, "result": _summarize(result)})
-        except Exception as error:
-            results.append({"name": name, "ok": False, "error": str(error)})
-            push_event("tool_failed", {"tool": name, "error": str(error)})
-    return results
-
-
-def _fallback_plan(utterance):
-    text = utterance.lower()
-    if any(word in text for word in ["walmart", "cereal", "substitute", "substitution"]) or (
-        "order" in text and "walmart" in text
-    ):
-        confirmed = bool(re.search(r"\b(yes|confirm|approved|do it|save it|apply)\b", text))
-        if confirmed:
-            return {
-                "tool_calls": [
-                    {"name": "lookup_walmart_order", "args": {}},
-                    {"name": "apply_walmart_substitution", "args": {}},
-                ],
-                "reason": "caller confirmed pending Walmart substitution",
-            }
-        return {
-            "tool_calls": [
-                {"name": "lookup_walmart_order", "args": {}},
-                {"name": "semantic_lookup", "args": {"query": "Walmart cereal substitution policy customer preference"}},
-                {
-                    "name": "propose_walmart_substitution",
-                    "args": {"item_name": "cereal", "substitute_name": "Cinnamon Oat Squares"},
-                },
-                {
-                    "name": "run_walmart_browser_task",
-                    "args": {
-                        "task": "Inspect Walmart substitution options for Honey Crunch Cereal and Cinnamon Oat Squares.",
-                        "caller_confirmed": False,
-                    },
-                },
-            ],
-            "reason": "fallback Walmart substitution negotiation",
-        }
-
-    if any(word in text for word in ["doordash", "door dash", "restaurant", "food", "cart", "pizza", "burger", "sushi"]):
-        action = "add"
-        remove_query = ""
-        search_term = _extract_doordash_search_term(utterance)
-        replace = re.search(r"\b(?:replace|swap|change)\s+(.+?)\s+(?:with|for|to)\s+(.+)$", utterance, re.I)
-        remove = re.search(r"\b(?:remove|delete|take out)\s+(.+?)(?:\s+from\s+(?:my\s+)?cart|$)", utterance, re.I)
-        if replace:
-            action = "replace"
-            remove_query = _clean_doordash_term(replace.group(1))
-            search_term = _clean_doordash_term(replace.group(2))
-        elif remove:
-            action = "remove"
-            remove_query = _clean_doordash_term(remove.group(1))
-            search_term = ""
-        elif any(marker in text for marker in ["show cart", "view cart", "check cart"]):
-            action = "view_cart"
-            search_term = ""
-        return {
-            "tool_calls": [
-                {
-                    "name": "run_doordash_browser_task",
-                    "args": {
-                        "task": f"Handle this DoorDash cart request safely without checkout: {utterance}",
-                        "action": action,
-                        "search_term": search_term,
-                        "remove_query": remove_query,
-                    },
-                }
-            ],
-            "reason": "fallback DoorDash browser cart workflow",
-        }
-
-    if any(word in text for word in ["terminal", "pickup", "dropoff", "driver", "uber", "ride", "door", "reroute"]):
-        destination = "SFO Terminal D" if "d" in text or "wrong" in text else "SFO Terminal C"
-        if "tower 2" in text:
-            destination = "Salesforce Tower 2"
-        return {
-            "tool_calls": [
-                {"name": "lookup_uber_trip", "args": {}},
-                {"name": "semantic_lookup", "args": {"query": f"{destination} ride reroute driver safety policy"}},
-                {"name": "reroute_uber_driver", "args": {"destination_label": destination}},
-            ],
-            "reason": "fallback Uber reroute negotiation",
-        }
-
-    return {
-        "tool_calls": [],
-        "direct_response": "I can help with your ride or Walmart order. What do you need changed?",
-        "reason": "fallback general response",
-    }
-
-
-def _fallback_final(utterance, tool_results, plan, persona=None):
-    names = [result["name"] for result in tool_results if result.get("ok")]
-    body = None
-    if "reroute_uber_driver" in names:
-        reroute = next(result["result"] for result in tool_results if result["name"] == "reroute_uber_driver")
-        destination = reroute["destination"]["label"]
-        eta = reroute.get("eta_minutes")
-        body = f"Heading to {destination} now — see you in about {eta} min."
-    elif "apply_walmart_substitution" in names:
-        result = next(result["result"] for result in tool_results if result["name"] == "apply_walmart_substitution")
-        if result.get("applied"):
-            body = f"Done — swapped {result['substitution']['from']} for {result['substitution']['to']} on your order."
-    elif "propose_walmart_substitution" in names:
-        result = next(result["result"] for result in tool_results if result["name"] == "propose_walmart_substitution")
-        pending = result["pending"]
-        body = (
-            f"Quick heads-up: {pending['from']} is out of stock. "
-            f"We can swap it for {pending['to']} — want me to apply that?"
-        )
-    elif "run_doordash_browser_task" in names:
-        result = next(result["result"] for result in tool_results if result["name"] == "run_doordash_browser_task")
-        body = result.get("output") or result.get("message") or "I opened DoorDash and stopped before checkout."
-    if body is None:
-        body = plan.get("direct_response") or "Can you tell me a bit more about what you need?"
-    return _apply_persona_prefix(body, persona)
-
-
-def _extract_doordash_search_term(message):
-    match = re.search(r"(?:add|order|get|find|search for|look for)\s+(.+?)(?:\s+(?:on|from|to)\s+doordash|$)", message, re.I)
-    if match:
-        return _clean_doordash_term(match.group(1))
-    return "pizza"
-
-
-def _clean_doordash_term(value):
-    value = re.sub(r"\b(to cart|to my cart|in cart|in my cart|without buying|without checkout|do not buy|don't buy|please)\b", "", str(value), flags=re.I)
-    value = re.sub(r"\s+", " ", value).strip(" .,")
-    return value[:90]
-
-
 def _apply_persona_prefix(body, persona):
     block = _persona_block(persona)
     if not block:
@@ -283,6 +103,58 @@ def _apply_persona_prefix(body, persona):
     if role == "walmart_cs":
         return f"Hi, this is {name} from Walmart. {body}"
     return f"{name}: {body}"
+
+
+def _client():
+    if os.getenv("CONCORDE_OFFLINE_TESTS"):
+        print("[Gemini] client unavailable: offline_tests", flush=True)
+        return None
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("[Gemini] client unavailable: no_api_key", flush=True)
+        push_event("gemini_unavailable", {"reason": "no_api_key"})
+        return None
+    try:
+        from google import genai
+    except Exception as error:
+        print(f"[Gemini] client unavailable: sdk_import_failed: {error}", flush=True)
+        push_event("gemini_unavailable", {"error": str(error)})
+        return None
+    return genai.Client(api_key=api_key)
+
+
+def _gemini_model_name():
+    return os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+
+
+def _execute_plan(plan, context):
+    results = []
+    calls = plan.get("tool_calls", []) if isinstance(plan, dict) else []
+    for call in calls[:5]:
+        name = call.get("name")
+        args = call.get("args") or {}
+        tool = TOOL_REGISTRY.get(name)
+        print(f"[Tool] -> {name} args={json.dumps(args, default=str)[:300]}", flush=True)
+        if not tool:
+            print(f"[Tool] {name} unknown", flush=True)
+            results.append({"name": name, "ok": False, "error": "unknown_tool"})
+            continue
+        try:
+            result = tool(args, context)
+            summary = _summarize(result)
+            print(f"[Tool] <- {name} ok result={json.dumps(summary, default=str)[:300]}", flush=True)
+            results.append({"name": name, "ok": True, "result": summary})
+        except Exception as error:
+            print(f"[Tool] <- {name} FAILED: {error}\n{traceback.format_exc()}", flush=True)
+            results.append({"name": name, "ok": False, "error": str(error)})
+            push_event("tool_failed", {"tool": name, "error": str(error)})
+    return results
+
+
+def _summarize(value):
+    if isinstance(value, dict):
+        return value
+    return {"value": value}
 
 
 def _extract_text(response):
@@ -300,7 +172,15 @@ def _parse_json(text):
     return json.loads(match.group(0) if match else text)
 
 
-def _summarize(value):
-    if isinstance(value, dict):
-        return value
-    return {"value": value}
+def _deps(session_id):
+    return {
+        "client": _client,
+        "model_name": _gemini_model_name,
+        "history": _history[session_id],
+        "execute_plan": _execute_plan,
+        "apply_persona_prefix": _apply_persona_prefix,
+        "persona_block": _persona_block,
+        "parse_json": _parse_json,
+        "extract_text": _extract_text,
+        "system_prompt": SYSTEM_PROMPT,
+    }

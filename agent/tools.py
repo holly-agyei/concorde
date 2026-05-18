@@ -13,6 +13,8 @@ def lookup_uber_trip(caller_phone=None):
 
 def reroute_uber_driver(destination_label):
     result = uber.reroute_driver(destination_label)
+    if result.get("unchanged"):
+        return result
     push_event(
         "uber_rerouted",
         {

@@ -1,20 +1,20 @@
 [
   {
-    "id": "sfo-terminal-c",
-    "text": "SFO Terminal C is a domestic terminal pickup area. In this demo, the customer's original pickup is SFO Terminal C.",
+    "id": "sfo-terminal-2",
+    "text": "SFO Terminal 2 is a domestic terminal pickup area (Alaska, Delta, and other domestic carriers). In this demo, the customer's original pickup is SFO Terminal 2.",
     "metadata": {
       "category": "airport",
       "place": "SFO",
-      "terminal": "C"
+      "terminal": "2"
     }
   },
   {
-    "id": "sfo-terminal-d",
-    "text": "SFO Terminal D is close to Terminal C. A Terminal C to Terminal D pickup correction is a minor airport reroute.",
+    "id": "sfo-terminal-3",
+    "text": "SFO Terminal 3 is close to Terminal 2 and hosts United domestic flights. A Terminal 2 to Terminal 3 pickup correction is a minor airport reroute.",
     "metadata": {
       "category": "airport",
       "place": "SFO",
-      "terminal": "D"
+      "terminal": "3"
     }
   },
   {
@@ -35,7 +35,7 @@
   },
   {
     "id": "customer-terminal-context",
-    "text": "The demo customer is at SFO and may confuse Terminal C and Terminal D. Prefer concise confirmation before rerouting.",
+    "text": "The demo customer is at SFO and may confuse Terminal 2 and Terminal 3. Prefer concise confirmation before rerouting.",
     "metadata": {
       "category": "customer_context",
       "topic": "airport_pickup"

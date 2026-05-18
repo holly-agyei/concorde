@@ -46,7 +46,7 @@
                   <path id="routePath" class="route route-c" d="M42 162 C88 174, 126 214, 164 256 S250 342, 286 386"></path>
                   <circle class="route-start" cx="42" cy="162" r="9"></circle>
                 </svg>
-                <div id="destPin" class="dest-pin terminal-c" aria-hidden="true"></div>
+                <div id="destPin" class="dest-pin terminal-2" aria-hidden="true"></div>
               </div>
 
               <section class="bottom-sheet" aria-labelledby="rider-title">
@@ -66,22 +66,22 @@
                     <span class="pickup-dot" aria-hidden="true"></span>
                     <div>
                       <p>Pickup</p>
-                      <strong>152 Mission St</strong>
+                      <strong>450 San Bruno Avenue W</strong>
                     </div>
                   </div>
                   <div class="address-row">
                     <span class="drop-square" aria-hidden="true"></span>
                     <div>
                       <p>Dropoff</p>
-                      <strong id="dropoffText">SFO Terminal C</strong>
-                      <small id="dropoffSub">San Francisco International Airport · Door 3</small>
+                      <strong id="dropoffText">SFO Terminal 2</strong>
+                      <small id="dropoffSub">San Francisco International Airport · Door 2</small>
                     </div>
                   </div>
                 </div>
 
                 <button class="navigate-button" type="button" id="manualReroute">
                   <span aria-hidden="true">➤</span>
-                  Reroute To Terminal D
+                  Reroute To Terminal 3
                 </button>
               </section>
             </div>
@@ -93,7 +93,7 @@
               <p>Call the AgentPhone number, or test locally with a transcript.</p>
               <form id="utteranceForm">
                 <label for="utterance">Caller Says</label>
-                <textarea id="utterance" name="utterance" rows="3" autocomplete="off">I'm at Terminal D, not Terminal C.</textarea>
+                <textarea id="utterance" name="utterance" rows="3" autocomplete="off">I'm at Terminal 3, not Terminal 2.</textarea>
                 <button type="submit">Send To Agent</button>
               </form>
               <div class="agent-speech" aria-live="polite">

@@ -1,7 +1,7 @@
 {
   "driver_001": {
     "id": "driver_001",
-    "name": "Marcus",
+    "name": "David",
     "phone": "+14155550199",
     "current_location": {
       "lat": 37.6213,
@@ -9,10 +9,10 @@
       "label": "SFO approach"
     },
     "destination": {
-      "lat": 37.6177,
-      "lng": -122.3864,
-      "label": "SFO Terminal D",
-      "door": "Door 5"
+      "lat": 37.617306,
+      "lng": -122.38394,
+      "label": "SFO Terminal 2",
+      "door": "Door 2"
     },
     "status": "en_route",
     "eta_minutes": 6,
