@@ -30,8 +30,17 @@ const PERSONAS = {
     color: 'linear-gradient(135deg, #0071dc, #003a73)',
     preview: 'Tap to chat with Walmart',
   },
+  doordash: {
+    id: 'doordash',
+    name: 'DoorDash Support',
+    role: 'doordash_cs',
+    subtitle: 'Restaurants and cart help',
+    initials: 'DD',
+    color: 'linear-gradient(135deg, #eb1700, #8f1308)',
+    preview: 'Ask me to add, remove, or replace cart items',
+  },
 };
-const PERSONA_ORDER = ['uber-david', 'uber-vivya', 'walmart'];
+const PERSONA_ORDER = ['doordash', 'walmart', 'uber-david', 'uber-vivya'];
 
 const threads = Object.fromEntries(PERSONA_ORDER.map((id) => [id, []]));
 let activePersonaId = null;
@@ -256,14 +265,14 @@ async function sendToAgent(personaId, text) {
   const p = PERSONAS[personaId];
   showTyping();
   try {
-    const res = await fetch('/api/demo/local-utterance', {
+    const res = await fetch('/api/agent/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text,
         caller_phone: '+13185160977',
         session_id: `user-${p.id}`,
-        persona: { name: p.name, role: p.role },
+        persona: { id: p.id, name: p.name, role: p.role },
       }),
     });
     const data = await res.json();
@@ -368,6 +377,15 @@ function handleEvent({ type, data }) {
       break;
     case 'walmart_substitution_applied':
       addToast('walmart', 'Substitution applied');
+      break;
+    case 'doordash_browser_started':
+      addToast('doordash', `Working in DoorDash${data.plan?.action ? ' · ' + data.plan.action : ''}`);
+      break;
+    case 'doordash_browser_dry_run':
+      addToast('doordash', `Dry run planned${data.plan?.action ? ' · ' + data.plan.action : ''}`);
+      break;
+    case 'doordash_browser_finished':
+      addToast('doordash', data.result?.output || 'DoorDash browser step finished');
       break;
     case 'call_ended':
       if (inCall) endCall();

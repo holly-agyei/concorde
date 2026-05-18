@@ -1,5 +1,6 @@
 from events import push_event
 from integrations.browser_walmart import run_walmart_browser_task
+from integrations.doordash_browser import run_doordash_browser_task
 from integrations.moss_runtime import semantic_lookup as moss_lookup
 from mocks import uber, walmart
 
@@ -70,6 +71,16 @@ def walmart_browser_task(task, caller_confirmed=False):
     return run_walmart_browser_task(task, caller_confirmed=caller_confirmed)
 
 
+def doordash_browser_task(task, action="add", search_term="", remove_query=""):
+    plan = {
+        "action": action,
+        "search_term": search_term,
+        "remove_query": remove_query,
+        "browser_task": task,
+    }
+    return run_doordash_browser_task(task, plan=plan)
+
+
 TOOL_REGISTRY = {
     "lookup_uber_trip": lambda args, ctx: lookup_uber_trip(ctx.get("caller_phone")),
     "reroute_uber_driver": lambda args, ctx: reroute_uber_driver(args.get("destination_label")),
@@ -81,6 +92,12 @@ TOOL_REGISTRY = {
     "run_walmart_browser_task": lambda args, ctx: walmart_browser_task(
         args.get("task", "Open Walmart purchase history and inspect substitution options."),
         caller_confirmed=bool(args.get("caller_confirmed")),
+    ),
+    "run_doordash_browser_task": lambda args, ctx: doordash_browser_task(
+        args.get("task", "Open DoorDash and handle the user's safe cart request."),
+        action=args.get("action", "add"),
+        search_term=args.get("search_term", ""),
+        remove_query=args.get("remove_query", ""),
     ),
     "semantic_lookup": lambda args, ctx: semantic_lookup(args.get("query", "")),
 }

@@ -1,0 +1,13 @@
+2026/05/17-18:36:58.453 fb5ca Reusing MANIFEST /Users/holy/Documents/yc-hackathon/concorde/data/chrome-profile/Default/IndexedDB/https_www.doordash.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/17-18:36:58.454 fb5ca Recovering log #19
+2026/05/17-18:36:58.454 fb5ca Reusing old log /Users/holy/Documents/yc-hackathon/concorde/data/chrome-profile/Default/IndexedDB/https_www.doordash.com_0.indexeddb.leveldb/000019.log 
+2026/05/17-18:36:59.011 fb5d6 Level-0 table #24: started
+2026/05/17-18:36:59.012 fb5d6 Level-0 table #24: 41229 bytes OK
+2026/05/17-18:36:59.014 fb5d6 Delete type=0 #19
+2026/05/17-18:36:59.014 fb5ca Manual compaction at level-0 from '\x00\x09\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x0a\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/05/17-18:37:02.098 fb5cd Compacting 1@1 + 1@2 files
+2026/05/17-18:37:02.112 fb5cd Generated table #25@1: 2792 keys, 202405 bytes
+2026/05/17-18:37:02.112 fb5cd Compacted 1@1 + 1@2 files => 202405 bytes
+2026/05/17-18:37:02.113 fb5cd compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/05/17-18:37:02.113 fb5cd Delete type=2 #21
+2026/05/17-18:37:02.113 fb5cd Delete type=2 #24

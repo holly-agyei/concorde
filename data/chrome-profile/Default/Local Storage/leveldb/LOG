@@ -1,0 +1,6 @@
+2026/05/17-18:36:53.804 fb62e Reusing MANIFEST /Users/holy/Documents/yc-hackathon/concorde/data/chrome-profile/Default/Local Storage/leveldb/MANIFEST-000001
+2026/05/17-18:36:53.811 fb62e Recovering log #3
+2026/05/17-18:36:53.812 fb62e Reusing old log /Users/holy/Documents/yc-hackathon/concorde/data/chrome-profile/Default/Local Storage/leveldb/000003.log 
+2026/05/17-18:42:08.816 fb632 Level-0 table #5: started
+2026/05/17-18:42:08.820 fb632 Level-0 table #5: 14726 bytes OK
+2026/05/17-18:42:08.822 fb632 Delete type=0 #3

@@ -17,6 +17,8 @@ def load_environment():
         "gemini_api_key": "GEMINI_API_KEY",
         "moss_api_key": "MOSS_PROJECT_ID",
         "moss_project_key": "MOSS_PROJECT_KEY",
+        "browser_use_api_key": "BROWSER_USE_API_KEY",
+        "browser_user_key": "BROWSER_USE_API_KEY",
     }
     for source, target in aliases.items():
         if not os.getenv(target) and os.getenv(source):
