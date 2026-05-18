@@ -5,6 +5,18 @@ from flask import Flask, Response, jsonify, request, send_from_directory, stream
 
 import config  # noqa: F401
 from agent.brain import reset_session, respond
+from agent.doordash_browser_agent import (
+    get_doordash_session,
+    handle_doordash_text,
+    is_doordash_message,
+    reset_doordash_session,
+)
+from agent.walmart_browser_agent import (
+    get_walmart_session,
+    handle_walmart_text,
+    is_walmart_message,
+    reset_walmart_session,
+)
 from events import encode_sse, push_event, subscribe, unsubscribe
 from integrations.agentphone import verify_webhook
 from mocks import uber, walmart
@@ -15,6 +27,26 @@ app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 @app.get("/")
 def index():
+    return jsonify(
+        {
+            "service": "concorde",
+            "mode": "server-side",
+            "primary_flow": "Text -> service browser agent -> guarded live site action",
+            "endpoints": {
+                "walmart_text": "POST /api/walmart/text",
+                "doordash_text": "POST /api/doordash/text",
+                "agent_chat": "POST /api/agent/chat",
+                "walmart_session": "GET /api/walmart/session/<session_id>",
+                "doordash_session": "GET /api/doordash/session/<session_id>",
+                "agentphone": "POST /webhook/agentphone",
+                "state": "GET /api/state",
+            },
+        }
+    )
+
+
+@app.get("/demo")
+def demo_index():
     return send_from_directory("static", "index.html")
 
 
@@ -80,17 +112,74 @@ def api_walmart_substitution():
     return jsonify(current_state())
 
 
+@app.post("/api/walmart/text")
+def api_walmart_text():
+    payload = request.get_json(silent=True) or {}
+    message = payload.get("message") or payload.get("text") or ""
+    session_id = payload.get("session_id") or payload.get("conversationId") or "walmart-local"
+    caller = payload.get("caller_phone") or payload.get("from") or "+13185160977"
+    result = handle_walmart_text(session_id, caller, message, source="api")
+    return jsonify(result)
+
+
+@app.get("/api/walmart/session/<session_id>")
+def api_walmart_session(session_id):
+    return jsonify({"session_id": session_id, "session": get_walmart_session(session_id)})
+
+
+@app.post("/api/walmart/session/<session_id>/reset")
+def api_walmart_session_reset(session_id):
+    reset_walmart_session(session_id)
+    push_event("walmart_text_session_reset", {"session_id": session_id})
+    return jsonify({"status": "ok", "session_id": session_id})
+
+
+@app.post("/api/doordash/text")
+def api_doordash_text():
+    payload = request.get_json(silent=True) or {}
+    message = payload.get("message") or payload.get("text") or ""
+    session_id = payload.get("session_id") or payload.get("conversationId") or "doordash-local"
+    caller = payload.get("caller_phone") or payload.get("from") or "+13185160977"
+    result = handle_doordash_text(session_id, caller, message, source="api")
+    return jsonify(result)
+
+
+@app.get("/api/doordash/session/<session_id>")
+def api_doordash_session(session_id):
+    return jsonify({"session_id": session_id, "session": get_doordash_session(session_id)})
+
+
+@app.post("/api/doordash/session/<session_id>/reset")
+def api_doordash_session_reset(session_id):
+    reset_doordash_session(session_id)
+    push_event("doordash_text_session_reset", {"session_id": session_id})
+    return jsonify({"status": "ok", "session_id": session_id})
+
+
+@app.post("/api/agent/chat")
+def api_agent_chat():
+    payload = request.get_json(silent=True) or {}
+    return jsonify(_handle_agent_chat(payload, source="user-ui"))
+
+
 @app.post("/webhook/agentphone")
 def agentphone_webhook():
     raw_body = request.get_data(as_text=True)
-    verification = verify_webhook(
-        raw_body,
-        request.headers.get("X-Webhook-Signature"),
-        request.headers.get("X-Webhook-Timestamp"),
-        os.getenv("AGENT_PHONE_WEBHOOK_SECRET"),
-    )
-    if not verification["ok"]:
-        return jsonify({"error": verification["reason"]}), 401
+    secret = os.getenv("AGENT_PHONE_WEBHOOK_SECRET")
+    skip_verify = config.truthy("AGENT_PHONE_SKIP_VERIFY")
+    if skip_verify:
+        # Dev-only escape hatch: bypass signature check so local curl/test scripts work
+        # without a real AgentPhone signature. Never enable in production.
+        pass
+    else:
+        verification = verify_webhook(
+            raw_body,
+            request.headers.get("X-Webhook-Signature"),
+            request.headers.get("X-Webhook-Timestamp"),
+            secret,
+        )
+        if not verification["ok"]:
+            return jsonify({"error": verification["reason"]}), 401
 
     try:
         payload = json.loads(raw_body or "{}")
@@ -117,10 +206,14 @@ def agentphone_webhook():
         return _voice_stream(session_id, caller_phone, transcript)
 
     if channel in {"sms", "mms", "imessage"}:
-        message = data.get("message") or ""
+        message = data.get("message") or data.get("text") or data.get("body") or ""
         push_event("incoming_message", {"from": caller_phone, "text": message, "channel": channel})
-        final = respond(session_id, caller_phone, message)
-        return jsonify({"status": "ok", "text": final})
+        routed = _route_user_message(session_id, caller_phone, message, source=channel)
+        if routed["route"] == "doordash":
+            return jsonify({"status": "ok", "text": routed["text"], "doordash": routed["doordash"]})
+        if routed["route"] == "walmart":
+            return jsonify({"status": "ok", "text": routed["text"], "walmart": routed["walmart"]})
+        return jsonify({"status": "ok", "text": routed["text"]})
 
     return jsonify({"status": "ok"})
 
@@ -128,21 +221,56 @@ def agentphone_webhook():
 @app.post("/api/demo/local-utterance")
 def local_utterance():
     payload = request.get_json(silent=True) or {}
-    text = payload.get("text", "")
-    caller = payload.get("caller_phone", "+13185160977")
-    session_id = payload.get("session_id") or "local-demo"
-    persona = payload.get("persona")
-    final = respond(session_id, caller, text, persona=persona)
-    return jsonify({"text": final, "state": current_state()})
+    return jsonify(_handle_agent_chat(payload, source="local-demo"))
 
 
 def _voice_stream(session_id, caller_phone, transcript):
     def generate():
-        yield json.dumps({"text": "Let me check that for you.", "interim": True}) + "\n"
-        final = respond(session_id, caller_phone, transcript)
-        yield json.dumps({"text": final}) + "\n"
+        yield json.dumps({"text": "One moment, let me check.", "interim": True}) + "\n"
+        routed = _route_user_message(session_id, caller_phone, transcript, source="voice")
+        yield json.dumps({"text": routed["text"]}) + "\n"
 
     return Response(stream_with_context(generate()), mimetype="application/x-ndjson")
+
+
+def _route_user_message(session_id, caller_phone, text, source="api", persona=None):
+    """Shared router for SMS, voice, and the user-UI chat.
+
+    Returns {"text": str, "route": "doordash"|"walmart"|"brain", ...extras}.
+    """
+    persona = persona if isinstance(persona, dict) else {}
+    role = persona.get("role", "")
+    persona_id = persona.get("id", "")
+
+    if role == "doordash_cs" or persona_id == "doordash":
+        result = handle_doordash_text(session_id, caller_phone, text, source=source)
+        return {"text": result["reply"], "route": "doordash", "doordash": result}
+
+    if role == "walmart_cs" or persona_id == "walmart":
+        result = handle_walmart_text(session_id, caller_phone, text, source=source)
+        return {"text": result["reply"], "route": "walmart", "walmart": result}
+
+    if is_doordash_message(text):
+        result = handle_doordash_text(session_id, caller_phone, text, source=source)
+        return {"text": result["reply"], "route": "doordash", "doordash": result}
+
+    if is_walmart_message(text):
+        result = handle_walmart_text(session_id, caller_phone, text, source=source)
+        return {"text": result["reply"], "route": "walmart", "walmart": result}
+
+    final = respond(session_id, caller_phone, text, persona=persona)
+    return {"text": final, "route": "brain"}
+
+
+def _handle_agent_chat(payload, source="api"):
+    text = payload.get("message") or payload.get("text") or ""
+    caller = payload.get("caller_phone") or payload.get("from") or "+13185160977"
+    session_id = payload.get("session_id") or payload.get("conversationId") or "local-demo"
+    persona = payload.get("persona") if isinstance(payload.get("persona"), dict) else {}
+
+    routed = _route_user_message(session_id, caller, text, source=source, persona=persona)
+    routed["state"] = current_state()
+    return routed
 
 
 def current_state():
@@ -155,6 +283,9 @@ def current_state():
             "gemini_enabled": bool(os.getenv("GEMINI_API_KEY")),
             "moss_enabled": bool(os.getenv("MOSS_PROJECT_ID") and os.getenv("MOSS_PROJECT_KEY")),
             "browser_use_enabled": bool(os.getenv("BROWSER_USE_API_KEY")),
+            "browser_use_dry_run": config.truthy("BROWSER_USE_DRY_RUN"),
+            "doordash_profile_id": os.getenv("DOORDASH_BROWSER_PROFILE_ID", "Default"),
+            "doordash_checkout_enabled": False,
         },
     }
 

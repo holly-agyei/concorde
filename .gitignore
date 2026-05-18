@@ -8,3 +8,4 @@ __pycache__/
 .venv/
 node_modules/
 npm-debug.log*
+data/doordash_storage_state.json

@@ -263,6 +263,109 @@ SMS webhook responses:
 - Keep real call/text scripts guarded or explicit.
 - Rotate any key that was pasted into chat or screenshots.
 
+## Voice -> DoorDash Wiring (Concorde Flask app)
+
+The Concorde Flask app (`concorde/app.py`) exposes `POST /webhook/agentphone`.
+For inbound voice turns (`event: agent.message`, `channel: "voice"`) it now
+routes the transcript through the same helper the user-UI chat uses
+(`_route_user_message`). That means voice utterances like "change my doordash
+cart to pizza" are dispatched to `handle_doordash_text(...)` (the DoorDash
+browser agent), not just to the generic `agent.brain.respond(...)`. The
+response is streamed back as `application/x-ndjson` matching the shape
+documented above:
+
+```json
+{"text":"One moment, let me check.","interim":true}
+{"text":"<final spoken reply>"}
+```
+
+### Local end-to-end voice setup (no real phone call)
+
+1. Start the Flask app:
+
+   ```bash
+   cd concorde
+   python3 app.py
+   ```
+
+   It listens on `http://localhost:5000`.
+
+2. In a second terminal, expose port 5000 with ngrok:
+
+   ```bash
+   ngrok http 5000
+   ```
+
+   Copy the `https://...ngrok-free.app` forwarding URL.
+
+3. Register that URL as the per-agent webhook (replace the host):
+
+   ```bash
+   curl -X POST "https://api.agentphone.ai/v1/agents/cmpa6fsnp085rjz008rwxt9g6/webhook" \
+     -H "Authorization: Bearer $AGENT_PHONE_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"url":"https://YOUR-NGROK-SUBDOMAIN.ngrok-free.app/webhook/agentphone","contextLimit":10,"timeout":30}'
+   ```
+
+4. Save the returned `secret` in `concorde/.env`:
+
+   ```bash
+   AGENT_PHONE_WEBHOOK_SECRET=whsec_returned_here
+   ```
+
+   Restart the Flask app so the new env is picked up. Now AgentPhone calls to
+   `+18154738613` will hit the Flask handler, signature verification will
+   pass, and voice transcripts will route to the DoorDash agent when relevant.
+
+### Local dev without a webhook secret
+
+If you want to curl the webhook locally (or run the test script below) before
+registering a real AgentPhone webhook, set:
+
+```bash
+AGENT_PHONE_SKIP_VERIFY=1
+```
+
+in `concorde/.env`. This bypasses the HMAC check **only when explicitly
+enabled** and is intended for development. Leave it unset (or `0`) in any
+shared or production environment so real AgentPhone signatures are still
+verified.
+
+### Simulated voice test (no phone network)
+
+```bash
+cd concorde
+python3 scripts/test_agentphone_voice.py
+# or with a custom transcript:
+python3 scripts/test_agentphone_voice.py "Hey can you change my doordash cart to pizza"
+```
+
+The script posts a fake `agent.message` voice event to
+`/webhook/agentphone` and prints the streamed ndjson lines. A DoorDash-flavored
+transcript should produce a reply from the DoorDash browser agent, not the
+generic brain.
+
+## Twilio / Gemini Live Fallback (if AgentPhone is unavailable)
+
+If AgentPhone is misconfigured (no API key, expired webhook secret, account
+snapshot above is stale) and we can't make voice work in time, wire a
+Twilio-based fallback instead:
+
+1. Buy/claim a Twilio phone number and point its **Voice webhook** at
+   `POST https://YOUR-NGROK-SUBDOMAIN.ngrok-free.app/webhook/twilio/voice`.
+2. The handler returns TwiML that uses `<Gather input="speech">` (Twilio's
+   built-in STT) or `<Connect><Stream>` for real-time audio piped to Gemini
+   Live / Whisper for transcription.
+3. Feed the transcript into the existing `_route_user_message(session_id,
+   caller_phone, transcript, source="voice")` helper - same DoorDash/Walmart
+   routing as AgentPhone gets for free.
+4. Synthesize the agent's reply with ElevenLabs or OpenAI TTS, return it as
+   `<Play>` TwiML (or stream audio back over the websocket).
+5. On `call.completed` Twilio webhook, call `reset_session(session_id)`.
+
+This is documented but **not implemented**. AgentPhone is the primary path;
+Twilio is the break-glass option if the live AgentPhone account stops working.
+
 ## Coding Agent Runbook
 
 When a coding agent starts from this repo:

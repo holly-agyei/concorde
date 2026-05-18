@@ -75,6 +75,14 @@ function eventMessage(event) {
       return "Browser Use started Walmart workflow";
     case "browser_use_failed":
       return `Browser Use blocked: ${data.error}`;
+    case "doordash_browser_started":
+      return `DoorDash browser started${data.plan?.action ? `: ${data.plan.action}` : ""}`;
+    case "doordash_browser_dry_run":
+      return `DoorDash dry run${data.plan?.action ? `: ${data.plan.action}` : ""}`;
+    case "doordash_browser_finished":
+      return data.result?.output || "DoorDash browser finished";
+    case "doordash_browser_failed":
+      return `DoorDash browser blocked: ${data.error}`;
     case "agent_response":
       return `Agent: ${data.text}`;
     case "demo_reset":

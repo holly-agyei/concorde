@@ -76,7 +76,7 @@ def _client():
 
 
 def _gemini_model_name():
-    return os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+    return os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 
 def _plan_with_gemini(session_id, caller_phone, utterance, persona=None):
@@ -149,7 +149,9 @@ def _execute_plan(plan, context):
 
 def _fallback_plan(utterance):
     text = utterance.lower()
-    if any(word in text for word in ["walmart", "cereal", "substitute", "substitution", "order"]):
+    if any(word in text for word in ["walmart", "cereal", "substitute", "substitution"]) or (
+        "order" in text and "walmart" in text
+    ):
         confirmed = bool(re.search(r"\b(yes|confirm|approved|do it|save it|apply)\b", text))
         if confirmed:
             return {
@@ -176,6 +178,38 @@ def _fallback_plan(utterance):
                 },
             ],
             "reason": "fallback Walmart substitution negotiation",
+        }
+
+    if any(word in text for word in ["doordash", "door dash", "restaurant", "food", "cart", "pizza", "burger", "sushi"]):
+        action = "add"
+        remove_query = ""
+        search_term = _extract_doordash_search_term(utterance)
+        replace = re.search(r"\b(?:replace|swap|change)\s+(.+?)\s+(?:with|for|to)\s+(.+)$", utterance, re.I)
+        remove = re.search(r"\b(?:remove|delete|take out)\s+(.+?)(?:\s+from\s+(?:my\s+)?cart|$)", utterance, re.I)
+        if replace:
+            action = "replace"
+            remove_query = _clean_doordash_term(replace.group(1))
+            search_term = _clean_doordash_term(replace.group(2))
+        elif remove:
+            action = "remove"
+            remove_query = _clean_doordash_term(remove.group(1))
+            search_term = ""
+        elif any(marker in text for marker in ["show cart", "view cart", "check cart"]):
+            action = "view_cart"
+            search_term = ""
+        return {
+            "tool_calls": [
+                {
+                    "name": "run_doordash_browser_task",
+                    "args": {
+                        "task": f"Handle this DoorDash cart request safely without checkout: {utterance}",
+                        "action": action,
+                        "search_term": search_term,
+                        "remove_query": remove_query,
+                    },
+                }
+            ],
+            "reason": "fallback DoorDash browser cart workflow",
         }
 
     if any(word in text for word in ["terminal", "pickup", "dropoff", "driver", "uber", "ride", "door", "reroute"]):
@@ -217,9 +251,25 @@ def _fallback_final(utterance, tool_results, plan, persona=None):
             f"Quick heads-up: {pending['from']} is out of stock. "
             f"We can swap it for {pending['to']} — want me to apply that?"
         )
+    elif "run_doordash_browser_task" in names:
+        result = next(result["result"] for result in tool_results if result["name"] == "run_doordash_browser_task")
+        body = result.get("output") or result.get("message") or "I opened DoorDash and stopped before checkout."
     if body is None:
         body = plan.get("direct_response") or "Can you tell me a bit more about what you need?"
     return _apply_persona_prefix(body, persona)
+
+
+def _extract_doordash_search_term(message):
+    match = re.search(r"(?:add|order|get|find|search for|look for)\s+(.+?)(?:\s+(?:on|from|to)\s+doordash|$)", message, re.I)
+    if match:
+        return _clean_doordash_term(match.group(1))
+    return "pizza"
+
+
+def _clean_doordash_term(value):
+    value = re.sub(r"\b(to cart|to my cart|in cart|in my cart|without buying|without checkout|do not buy|don't buy|please)\b", "", str(value), flags=re.I)
+    value = re.sub(r"\s+", " ", value).strip(" .,")
+    return value[:90]
 
 
 def _apply_persona_prefix(body, persona):

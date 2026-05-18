@@ -11,10 +11,10 @@
       "label": "152 Mission St"
     },
     "destination": {
-      "lat": 37.619,
-      "lng": -122.383,
-      "label": "Station B",
-      "door": "Confirm with rider"
+      "lat": 37.6177,
+      "lng": -122.3864,
+      "label": "SFO Terminal D",
+      "door": "Door 5"
     },
     "status": "in_progress",
     "rating": "4.9"
